@@ -2,10 +2,12 @@
 
 Colours in images.
 
+<!---
+Need to get better example images showing colour hints
 Sketch Lines             |  Coloured Images
 :-------------------------:|:-------------------------:
 ![alt text](samples/sample_edges.jpg?raw=True "Edge Images")  |  ![alt text](samples/sample_gen.jpg?raw=True "Coloured Images")
-
+-->
 
 ## Getting Started
 

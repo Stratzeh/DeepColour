@@ -119,7 +119,7 @@ class DeepColour():
         examples = np.array([get_image(img) for img in data[0:self.batch_size]])
         examples_normalized = examples / 255.0
 
-        kernel = np.ones((2,2), np.uint8)
+        #kernel = np.ones((2,2), np.uint8)
         # Is this a smart way to get edges? idk
         #examples_edge = np.array([cv2.erode(cv2.bitwise_not(cv2.Canny(img, 100, 100)), kernel, 2) for img in examples[0:self.batch_size]]) / 255.0
         examples_edge = np.array([cv2.adaptiveThreshold(cv2.cvtColor(ex, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, blockSize=9, C=2) for ex in examples]) / 255.0
@@ -149,12 +149,35 @@ class DeepColour():
 
                 print('Epoch: %d  |  [%d / %d]  |  d_loss: %.4f  |  g_loss: %.4f' % (e, i, int(datalen/self.batch_size), d_loss, g_loss))
 
-                if i % 10 == 0:
+                if i % 30 == 0:
                     recreation = self.sess.run(self.gen_images, feed_dict={self.line_images:batch_edges, self.colour_images:batch_colour, self.real_images:batch_normed})
                     ims('results/' + str(e*10000 + i) + '.jpg', merge_colour(recreation, [self.batch_size_sqrt, self.batch_size_sqrt]))
 
-                if i % 30 == 0:
+                if i % 100 == 0:
                     self.save('./checkpoint', e*10000 + i)
+
+    def sample(self, filenames=None):
+        self.load_model()
+
+        if not filenames:
+            data = glob(os.path.join('imgs', '*.jpg'))
+            filenames = [data[randint(0, len(data))] for _ in range(self.batch_size)]
+
+        imgs = np.array([get_image(file) for file in filenames])
+
+        imgs_normed = imgs / 255.0
+
+        samples_edge = np.array([cv2.adaptiveThreshold(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, blockSize=9, C=2) for img in imgs]) / 255.0
+        samples_edge = np.expand_dims(samples_edge, 3)
+
+        samples_colour = np.array([self.get_colourHints(img) for img in imgs]) / 255.0
+
+        ims('samples/sample.jpg', merge_colour(imgs_normed, [self.batch_size_sqrt, self.batch_size_sqrt]))
+        ims('samples/sample_edges.jpg', merge(samples_edge, [self.batch_size_sqrt, self.batch_size_sqrt]))
+        ims('samples/sample_colour_hints.jpg', merge_colour(samples_colour, [self.batch_size_sqrt, self.batch_size_sqrt]))
+
+        recreation = self.sess.run(self.gen_images, feed_dict={self.line_images:samples_edge, self.colour_images:samples_colour, self.real_images:imgs_normed})
+        ims('samples/sample_gen.jpg', merge_colour(recreation, [self.batch_size_sqrt, self.batch_size_sqrt]))
 
     def load(self, checkpoint_path):
         checkpoint_dir = os.path.join(checkpoint_path, 'tr')
@@ -204,9 +227,16 @@ class DeepColour():
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('Use like so: python main.py [train]')
+        print('Use like so: python main.py [train, sample] [filename (for sample)]')
     else:
         cmd = sys.argv[1]
         if cmd == 'train':
             dc = DeepColour()
             dc.train()
+        elif cmd == 'sample':
+            if len(sys.argv) == 3:
+                dc_samp = DeepColour(256, 1)
+                dc_samp.sample([sys.argv[2]])
+            else:
+                dc_samp = DeepColour(256, 16)
+                dc_samp.sample()

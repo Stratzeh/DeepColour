@@ -21,7 +21,7 @@ class DeepColour():
         self.gf_dim = 64
 
         self.input_bw = 1
-        self.input_colours = 3 # Yes, 'coloUrs', OOOH CAAAANADAAAA!!
+        self.input_colours = 3 # Yes, 'coloUrs'
         self.output_colours = 3
 
         self.d_bn1 = batch_norm(name='d_bn_1')

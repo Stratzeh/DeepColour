@@ -1,40 +1,28 @@
-import io
 import cv2
-import time
+import requests
 import numpy as np
-import urllib.request
-import xml.etree.ElementTree as ET
+
+from bs4 import BeautifulSoup
 
 # Size limit for our CNN
 max_size = 512
-count = 0
-i = 0
+count = 83502
 
-#for i in range(1000):
-while count < 1000:
-    print('Next address')
-    url = urllib.request.urlopen("http://safebooru.org/index.php?page=dapi&s=post&q=index&tags=1girl%20solo&pid=" + str(i)).read()
-    tree = ET.parse(io.BytesIO(url))
-    root = tree.getroot()
+for i in range(1100, 1300):
+    url = "http://safebooru.org/index.php?page=dapi&s=post&q=index&tags=1girl%20solo&pid=" + str(i)
+    page_response = requests.get(url)
+    content = BeautifulSoup(page_response.content, 'lxml')
 
-    for child in root:
-        file_url = 'http:' + child.attrib['file_url']
+    posts = content.find_all('post')
+    img_urls = [p['file_url'] for p in posts if 'png' in p['file_url'] or 'jpg' in p['file_url']]
 
-        if 'png' not in file_url and 'jpg' not in file_url:
-            print("'png' or 'jpg' not in filename")
-            continue
-        
-        try:
-            img = urllib.request.urlopen(file_url)
-        except:
-        	print('RemoteDisconnect')
-        	time.sleep(3)
-        	continue
-        
-
-        img = bytearray(img.read())
+    for url in img_urls:
+        response = requests.get('http:' + url)
+        img = bytearray(response.content)
         img = np.asarray(img, dtype='uint8')
         img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+        if img is None:
+            continue
         h, w = img.shape[:2]
 
         if h >= w:
@@ -52,10 +40,7 @@ while count < 1000:
             print("size mismatch, skip")
             continue
 
-        count += 1
         name = 'imgs/' + str(count) + '.jpg'
         cv2.imwrite(name, cropped_img)
-
-        print('Saved:', count)
-
-    i += 1
+        count += 1
+        print(count)

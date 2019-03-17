@@ -9,6 +9,7 @@ from glob import glob
 from random import randint
 from utils import *
 
+
 class DeepColour():
 
     def __init__(self, img_size=256, batch_size=4):
@@ -149,12 +150,12 @@ class DeepColour():
 
                 print('Epoch: %d  |  [%d / %d]  |  d_loss: %.4f  |  g_loss: %.4f' % (e, i, int(datalen/self.batch_size), d_loss, g_loss))
 
-                if i % 30 == 0:
+                if i % 200 == 0:
                     recreation = self.sess.run(self.gen_images, feed_dict={self.line_images:batch_edges, self.colour_images:batch_colour, self.real_images:batch_normed})
-                    ims('results/' + str(e*10000 + i) + '.jpg', merge_colour(recreation, [self.batch_size_sqrt, self.batch_size_sqrt]))
+                    ims('results/' + str(e*100000 + i) + '.jpg', merge_colour(recreation, [self.batch_size_sqrt, self.batch_size_sqrt]))
 
-                if i % 100 == 0:
-                    self.save('./checkpoint', e*10000 + i)
+                if i % 2000 == 0:
+                    self.save('./checkpoint', e*100000 + i)
 
     def sample(self, filenames=None):
         self.load_model()
@@ -224,6 +225,7 @@ class DeepColour():
             os.makedirs(checkpoint_dir)
 
         self.saver.save(self.sess, os.path.join(checkpoint_dir, model_name), global_step=step)
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
